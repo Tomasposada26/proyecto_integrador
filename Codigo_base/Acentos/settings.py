@@ -68,12 +68,8 @@ WSGI_APPLICATION = 'Acentos.wsgi.application'
 # Config base de datos PostgreSQL
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'libreriaacentos',
-        'USER': 'libreriauser',
-        'PASSWORD': '2025.',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
