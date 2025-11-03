@@ -28,9 +28,9 @@ INSTALLED_APPS = [
     'accounts',
     'books',
     'news',
-]
+] 
 
-# Middlewares
+# Middlewares a
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
