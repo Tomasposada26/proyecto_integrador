@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="INKALAB Libros - La mejor plataforma de libros en línea. Explora, descubre y compra tus libros favoritos.">
-    <meta name="keywords" content="libros, lectura, comprar libros, tienda de libros, INKALAB">
+    <meta name="description" content="Bookverse - La mejor plataforma de libros en línea. Explora, descubre y compra tus libros favoritos.">
+    <meta name="keywords" content="libros, lectura, comprar libros, tienda de libros, Bookverse">
     <title>{% block title %}{{ app_name }}{% endblock %}</title>
 
     <!-- Favicon -->
@@ -90,11 +90,17 @@
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 
-    h1.app-title {
-        margin: 0;
-        font-size: 1.8rem;
-        letter-spacing: -0.02em;
-        font-weight: 600;
+        h1.app-title {
+            margin: 0;
+            font-size: 2.2rem !important;
+            letter-spacing: -0.02em;
+            font-weight: 600;
+        }
+    
+        @media (max-width: 768px) {
+            h1.app-title {
+                    font-size: 2.2rem !important;
+            }
     }
 
     .user-avatar-container {
@@ -512,8 +518,8 @@
 
     /* 🆕 BREADCRUMBS MEJORADOS */
     .breadcrumb-container {
-        background: var(--white);
-        border: 1px solid var(--light-gray);
+        background: #f7f7f7;
+        border: 1px solid #e0e0e0;
         border-radius: 12px;
         padding: 12px 20px;
         margin-bottom: 20px;
@@ -537,7 +543,7 @@
     }
 
     .breadcrumb-item a {
-        color: var(--medium-gray);
+        color: #222;
         text-decoration: none;
         transition: color 0.2s ease;
         display: flex;
@@ -546,11 +552,11 @@
     }
 
     .breadcrumb-item a:hover {
-        color: var(--black);
+        color: var(--accent);
     }
 
     .breadcrumb-item.active {
-        color: var(--black);
+        color: #111;
         font-weight: 600;
     }
 
@@ -911,7 +917,7 @@
     /* RESPONSIVE */
     @media (max-width: 768px) {
         h1.app-title {
-            font-size: 1.4rem;
+            font-size: 1.6rem;
         }
 
         nav {
@@ -1014,27 +1020,20 @@
                 <div class="spinner-ring"></div>
                 <div class="spinner-ring"></div>
             </div>
-            <div class="loader-text">Cargando INKALAB Libros...</div>
+            <div class="loader-text">Cargando Bookverse...</div>
         </div>
     </div>
 
     <!-- Toast Container -->
     <div class="toast-container-custom" id="toastContainer"></div>
 
-    {% if messages %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            {% for message in messages %}
-                showToast('{{ message.tags }}', '{{ message|escapejs }}');
-            {% endfor %}
-        });
-    </script>
-    {% endif %}
 
     <!-- Header -->
     <header>
         <div class="logo-container" style="display:flex; align-items:center; gap:15px; justify-content:center;">
-            <h1 class="app-title">{{ app_name }}</h1>
+            <h1 class="app-title" style="margin:0;">
+                <a href="{% url 'home' %}" style="color:inherit; text-decoration:none; cursor:pointer;">{{ app_name }}</a>
+            </h1>
         </div>
     </header>
 
@@ -1045,11 +1044,50 @@
                 <i class="bi bi-list"></i>
             </button>
             <a href="{% url 'home' %}" class="text-white text-decoration-none fw-bold fs-5" style="display: flex; align-items: center; gap: 8px;">
-                <i class="bi bi-book"></i> <span>INKALAB Libros</span>
+                <i class="bi bi-book"></i> <span>Bookverse</span>
             </a>
         </div>
 
-        <div class="navbar-right">
+    <div class="navbar-right" style="display: flex; align-items: center; gap: 18px;">
+            <!-- Botón Modo Oscuro/Claro moderno -->
+            <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Cambiar modo">
+                <span class="theme-icon" id="themeIcon">
+                    <i class="bi bi-moon"></i>
+                </span>
+            </button>
+<style>
+.theme-toggle-btn {
+    background: var(--white);
+    border: 2px solid var(--light-gray);
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: var(--black);
+    cursor: pointer;
+    transition: background 0.2s, border 0.2s, color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.theme-toggle-btn:hover {
+    background: var(--extra-light-gray);
+    border-color: var(--black);
+    color: var(--black);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+.theme-toggle-btn .theme-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    transition: color 0.2s, transform 0.5s cubic-bezier(.4,2,.6,1);
+}
+.theme-toggle-btn .theme-icon.spin {
+    transform: rotate(360deg);
+}
+</style>
             <!-- Buscador -->
             <div class="search-wrapper">
                 <form method="get" action="{% url 'book_search' %}" class="search-form-expandable">
@@ -1118,10 +1156,13 @@
                                 <i class="bi bi-gear"></i>
                                 <span>Configuración</span>
                             </a>
-                            <a href="{% url 'logout' %}" class="dropdown-item logout">
-                                <i class="bi bi-box-arrow-right"></i>
-                                <span>Cerrar Sesión</span>
-                            </a>
+                            <form id="logout-form" action="{% url 'logout' %}" method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item logout" style="background:none; border:none; padding:0; margin:0; width:100%; text-align:left;">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    <span>Cerrar Sesión</span>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -1225,7 +1266,7 @@
     <footer>
         <div class="footer-content">
             <div class="footer-section">
-                <h5><i class="bi bi-book-fill"></i> INKALAB Libros</h5>
+                <h5><i class="bi bi-book-fill"></i> Bookverse</h5>
                 <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem; line-height: 1.6;">
                     Tu plataforma de confianza para descubrir, explorar y comprar los mejores libros.
                 </p>
@@ -1268,7 +1309,7 @@
 
         <div class="footer-bottom">
             <p style="margin: 0; font-size: 0.9rem;">
-                © 2025 INKALAB Libros - Universidad EAFIT. Todos los derechos reservados.
+                © 2025 Bookverse - Universidad EAFIT. Todos los derechos reservados.
             </p>
         </div>
     </footer>
@@ -1418,6 +1459,229 @@
                 });
             });
         })();
+    </script>
+</script>
+
+<!-- Floating Chatbot Widget -->
+<div id="chatbot-widget" class="chatbot-float">
+    <div class="chatbot-header">
+        <span class="chatbot-title"><i class="bi bi-robot"></i> Bookverse AI</span>
+        <button class="chatbot-close" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="chatbot-body" id="chatbot-messages">
+        <div class="chatbot-message bot">¡Hola! ¿En qué puedo ayudarte a encontrar tu próximo libro?</div>
+    </div>
+    <form class="chatbot-input-row" id="chatbot-form" autocomplete="off">
+        <input type="text" id="chatbot-input" placeholder="Escribe tu pregunta..." required />
+        <button type="submit"><i class="bi bi-send"></i></button>
+    </form>
+</div>
+<button id="chatbot-fab" class="chatbot-fab" aria-label="Abrir chatbot">
+    <i class="bi bi-chat-dots"></i>
+</button>
+
+<style>
+.chatbot-float {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    width: 340px;
+    max-width: 95vw;
+    background: var(--white);
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    animation: chatbot-in 0.5s cubic-bezier(.22,1,.36,1);
+}
+@keyframes chatbot-in {
+    0% { transform: translateY(60px) scale(0.8); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.chatbot-header {
+    background: linear-gradient(90deg, var(--black), var(--dark-gray));
+    color: var(--white);
+    padding: 14px 18px;
+    border-radius: 18px 18px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+.chatbot-title i { margin-right: 6px; }
+.chatbot-close {
+    background: none;
+    border: none;
+    color: var(--white);
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+.chatbot-close:hover { opacity: 1; }
+.chatbot-body {
+    padding: 16px;
+    background: var(--extra-light-gray);
+    min-height: 120px;
+    max-height: 260px;
+    overflow-y: auto;
+    font-size: 0.98rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.chatbot-message {
+    padding: 10px 14px;
+    border-radius: 14px;
+    max-width: 85%;
+    margin-bottom: 2px;
+    word-break: break-word;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    animation: fadeInMsg 0.4s;
+}
+.chatbot-message.bot {
+    background: linear-gradient(90deg, var(--medium-gray), var(--light-gray));
+    color: var(--black);
+    align-self: flex-start;
+}
+.chatbot-message.user {
+    background: var(--black);
+    color: var(--white);
+    align-self: flex-end;
+}
+@keyframes fadeInMsg {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.chatbot-input-row {
+    display: flex;
+    border-top: 1px solid var(--light-gray);
+    background: var(--white);
+    border-radius: 0 0 18px 18px;
+}
+.chatbot-input-row input {
+    flex: 1;
+    border: none;
+    padding: 12px 14px;
+    font-size: 1rem;
+    border-radius: 0 0 0 18px;
+    outline: none;
+    background: var(--white);
+}
+.chatbot-input-row button {
+    background: var(--black);
+    color: var(--white);
+    border: none;
+    border-radius: 0 0 18px 0;
+    padding: 0 18px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.chatbot-input-row button:hover { background: var(--dark-gray); }
+.chatbot-fab {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--black), var(--dark-gray));
+    color: var(--white);
+    border: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    font-size: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9998;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    animation: chatbot-fab-in 0.6s cubic-bezier(.22,1,.36,1);
+}
+@keyframes chatbot-fab-in {
+    0% { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.chatbot-fab:active { transform: scale(0.95); }
+@media (max-width: 600px) {
+    .chatbot-float, .chatbot-fab { right: 10px; bottom: 10px; }
+    .chatbot-float { width: 98vw; max-width: 98vw; }
+}
+</style>
+<script>
+// Floating Chatbot Widget Logic
+const chatbotWidget = document.getElementById('chatbot-widget');
+const chatbotFab = document.getElementById('chatbot-fab');
+const chatbotClose = chatbotWidget.querySelector('.chatbot-close');
+const chatbotForm = document.getElementById('chatbot-form');
+const chatbotInput = document.getElementById('chatbot-input');
+const chatbotMessages = document.getElementById('chatbot-messages');
+
+function openChatbot() {
+    chatbotWidget.style.display = 'flex';
+    chatbotFab.style.display = 'none';
+    setTimeout(() => chatbotInput.focus(), 300);
+}
+function closeChatbot() {
+    chatbotWidget.style.display = 'none';
+    chatbotFab.style.display = 'flex';
+}
+chatbotFab.addEventListener('click', openChatbot);
+chatbotClose.addEventListener('click', closeChatbot);
+
+chatbotForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const msg = chatbotInput.value.trim();
+    if (!msg) return;
+    appendMessage(msg, 'user');
+    chatbotInput.value = '';
+    chatbotInput.focus();
+    // TODO: Integrate Gemini API call here
+    setTimeout(() => appendMessage('Pensando... (integración Gemini pendiente)', 'bot'), 600);
+});
+function appendMessage(text, who) {
+    const div = document.createElement('div');
+    div.className = 'chatbot-message ' + who;
+    div.textContent = text;
+    chatbotMessages.appendChild(div);
+    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+}
+</script>
+    <script>
+    // Modo oscuro/claro con botón moderno
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const themeIcon = document.getElementById('themeIcon');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    function setTheme(dark) {
+        if (dark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            themeIcon.innerHTML = '<i class="bi bi-sun"></i>';
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+            localStorage.setItem('theme', 'light');
+            themeIcon.innerHTML = '<i class="bi bi-moon"></i>';
+        }
+        themeIcon.classList.add('spin');
+        setTimeout(() => themeIcon.classList.remove('spin'), 500);
+    }
+    // Inicializar
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        setTheme(true);
+    } else {
+        setTheme(false);
+    }
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const isDark = document.documentElement.getAttribute('data-theme') !== 'dark';
+            setTheme(isDark);
+        });
+    }
     </script>
 </body>
 </html>

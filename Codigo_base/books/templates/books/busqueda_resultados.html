@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Resultados de búsqueda{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <h2 class="fw-bold mb-4">Resultados de búsqueda</h2>
+    <div class="mb-3">
+        <strong>Búsqueda ingresada:</strong> <span style="color:#1976d2;font-weight:600;">{{ query }}</span>
+    </div>
+    <div id="loader" style="display:none;text-align:center;">
+        <div class="spinner-border text-primary" role="status" style="width:3rem;height:3rem;">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <div style="font-weight:600;color:#1976d2;">Cargando resultados...</div>
+    </div>
+    {% if resultados %}
+        <button id="toggle-obras-btn" class="btn btn-primary mb-4" type="button" onclick="toggleObras()">Ver obras</button>
+        <div id="obras-lista" style="display:none;">
+            <div class="row">
+                {% for libro in resultados %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 p-3 shadow-sm">
+                        {% if libro.image_url %}
+                            <img src="{{ libro.image_url }}" alt="Portada" style="max-width:120px;max-height:180px;" class="mb-2 rounded">
+                        {% elif libro.cover %}
+                            <img src="{{ libro.cover.url }}" alt="Portada" style="max-width:120px;max-height:180px;" class="mb-2 rounded">
+                        {% else %}
+                            <img src="/static/img/default_cover.jpg" alt="Sin portada" style="max-width:120px;max-height:180px;" class="mb-2 rounded">
+                        {% endif %}
+                        <h5 class="fw-bold" style="color:#232323;">{{ libro.title }}</h5>
+                        <p><strong>Autor(es):</strong> {{ libro.authors }}</p>
+                        <p><strong>Género:</strong> {{ libro.genre|default:'No especificado' }}</p>
+                        <p><strong>Año:</strong> {{ libro.publication_date|default:'-' }}</p>
+                        <p><strong>Descripción:</strong> {{ libro.description|default:'Sin descripción.' }}</p>
+                        <div class="mb-2">
+                            <strong>Calificación:</strong>
+                            {% if libro.average_rating %}
+                                <span style="color:#ffc107; font-size:1.1rem;">
+                                    {% for i in "12345" %}
+                                        {% if i|add:0 <= libro.average_rating %}
+                                            <i class="bi bi-star-fill"></i>
+                                        {% elif i|add:0 <= libro.average_rating|floatformat:0 %}
+                                            <i class="bi bi-star-half"></i>
+                                        {% else %}
+                                            <i class="bi bi-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="ms-2">{{ libro.average_rating|floatformat:2 }}</span>
+                                </span>
+                            {% else %}
+                                <span class="text-muted">Sin calificación</span>
+                            {% endif %}
+                        </div>
+                        <div class="mt-2">
+                            <a href="/chat-obra/{{ libro.id }}/" class="btn btn-success btn-sm" style="border-radius:16px;">Conocer más</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <!-- PAGINACIÓN -->
+            {% if page_obj %}
+            <nav aria-label="Paginación de resultados">
+                <ul class="pagination justify-content-center mt-4">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?q={{ query|urlencode }}&page={{ page_obj.previous_page_number }}">Anterior</a></li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+                    {% endif %}
+                    <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                    {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?q={{ query|urlencode }}&page={{ page_obj.next_page_number }}">Siguiente</a></li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+        <div class="chatbot-bar mt-4 mb-2 p-3 rounded shadow-sm" style="background:linear-gradient(90deg,#f8fafc,#e9ecef);border:1.5px solid #e0e0e0;display:flex;align-items:center;justify-content:center;">
+            <a href="/chat-gustos/?q={{ query|urlencode }}" style="font-size:1.08rem;color:#178f7a;font-weight:600;text-decoration:underline;">
+                profundicemos más en tus gustos para encontrar tu obra indicada
+            </a>
+        </div>
+    {% else %}
+        <div class="alert alert-warning">No se encontraron obras relacionadas con tu búsqueda.</div>
+    {% endif %}
+    <a href="/" class="btn btn-outline mt-4">⬅️ Volver al inicio</a>
+</div>
+<script>
+
+function toggleObras() {
+    var obras = document.getElementById('obras-lista');
+    var btn = document.getElementById('toggle-obras-btn');
+    if (obras.style.display === 'none' || obras.style.display === '') {
+        obras.style.display = 'block';
+        btn.textContent = 'Ocultar obras';
+        localStorage.setItem('obras_mostradas', '1');
+    } else {
+        obras.style.display = 'none';
+        btn.textContent = 'Ver obras';
+        localStorage.setItem('obras_mostradas', '0');
+    }
+}
+
+// Loader y persistencia de estado de obras
+document.addEventListener('DOMContentLoaded', function() {
+    var loader = document.getElementById('loader');
+    var obras = document.getElementById('obras-lista');
+    var btn = document.getElementById('toggle-obras-btn');
+    if (loader) loader.style.display = 'block';
+    setTimeout(function() {
+        if (loader) loader.style.display = 'none';
+        if (btn && obras) btn.style.display = '';
+        // Persistencia: si ya se le dio a ver obras, mantenerlas visibles
+        if (btn && obras) {
+            var mostrar = localStorage.getItem('obras_mostradas');
+            if (mostrar === '1') {
+                obras.style.display = 'block';
+                btn.textContent = 'Ocultar obras';
+            } else {
+                obras.style.display = 'none';
+                btn.textContent = 'Ver obras';
+            }
+        }
+    }, 400); // Simula carga rápida
+});
+</script>
+{% endblock %}

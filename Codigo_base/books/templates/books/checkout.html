@@ -1,0 +1,151 @@
+</style>
+<style>
+/* Mejora de legibilidad para selects */
+select.form-select {
+    background-color: #fff;
+    color: #222;
+    font-size: 1.1rem;
+    border: 1.5px solid #bbb;
+    border-radius: 6px;
+    min-height: 44px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+select.form-select:focus {
+    border-color: #222;
+    outline: none;
+    box-shadow: 0 0 0 2px #b3d4fc;
+}
+option {
+    background: #fff;
+    color: #222;
+    font-size: 1.05rem;
+    padding: 8px 12px;
+}
+</style>
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Finalizar Compra{% endblock %}
+
+{% block content %}
+<div class="container my-5 fade-in-up">
+    <h2 class="text-center mb-4 fw-bold">🧾 Finalizar Compra</h2>
+    <form method="post" action="{% url 'create_order' %}">
+        {% csrf_token %}
+        <div class="row g-4">
+            <div class="col-md-6">
+                <label class="form-label">Nombre</label>
+                <input type="text" name="nombre" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Apellidos</label>
+                <input type="text" name="apellidos" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Correo electrónico</label>
+                <input type="email" name="correo" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Dirección de residencia</label>
+                <input type="text" name="direccion" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">¿Cómo desea recibir su pedido?</label>
+                <select name="entrega" class="form-select" id="entrega-select" required>
+                    <option value="recoger">Recoger en tienda</option>
+                    <option value="domicilio">Domicilio (+$10.500)</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Método de pago</label>
+                <select name="metodo_pago" class="form-select" id="metodo-pago-select" required>
+                    <option value="contra_entrega">Contra entrega</option>
+                    <option value="pse">PSE</option>
+                    <option value="tarjeta">Tarjeta débito/crédito</option>
+                </select>
+            </div>
+        </div>
+        <div id="pago-tarjeta" style="display:none; margin-top:20px;">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Número de tarjeta</label>
+                    <input type="text" name="numero_tarjeta" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Fecha vencimiento</label>
+                    <input type="text" name="fecha_vencimiento" class="form-control" placeholder="MM/AA">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">CVC</label>
+                    <input type="text" name="cvc" class="form-control">
+                </div>
+            </div>
+        </div>
+        <div id="pago-pse" style="display:none; margin-top:20px;">
+            <label class="form-label">Banco</label>
+            <select name="banco" class="form-select">
+                <option value="">Seleccione un banco</option>
+                <option>Bancolombia</option>
+                <option>Davivienda</option>
+                <option>Banco de Bogotá</option>
+                <option>Banco Popular</option>
+                <option>Banco de Occidente</option>
+                <option>BBVA</option>
+                <option>Scotiabank Colpatria</option>
+                <option>Banco AV Villas</option>
+                <option>Banco Caja Social</option>
+            </select>
+        </div>
+        <div class="mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fs-6">Total productos:</span>
+                <span class="fs-6">${{ total_price|floatformat:0|intcomma }}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2" id="domicilio-row" style="display:none;">
+                <span class="fs-6">Domicilio:</span>
+                <span class="fs-6">+${{ domicilio_fee|floatformat:0|intcomma }}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="fs-5 fw-bold">Total a pagar:</span>
+                <span class="fs-4 fw-bold text-success" id="total-final-span">${{ total_final|floatformat:0|intcomma }}</span>
+            </div>
+        </div>
+        <div class="mt-4 d-flex gap-3">
+            <a href="{% url 'book_list' %}" class="btn btn-outline-dark">← Seguir explorando</a>
+            <button type="submit" class="btn btn-success">Confirmar pedido</button>
+        </div>
+    </form>
+</div>
+<script>
+    // Mostrar campos según método de pago y actualizar total con domicilio
+    document.addEventListener('DOMContentLoaded', function() {
+        const metodoPago = document.getElementById('metodo-pago-select');
+        const tarjeta = document.getElementById('pago-tarjeta');
+        const pse = document.getElementById('pago-pse');
+        metodoPago.addEventListener('change', function() {
+            tarjeta.style.display = this.value === 'tarjeta' ? 'block' : 'none';
+            pse.style.display = this.value === 'pse' ? 'block' : 'none';
+        });
+        // Mostrar/ocultar costo de domicilio y actualizar total
+        const entrega = document.getElementById('entrega-select');
+        const domicilioRow = document.getElementById('domicilio-row');
+        const totalFinalSpan = document.getElementById('total-final-span');
+    const totalProductos = parseFloat("{{ total_price|floatformat:'2' }}");
+    const domicilioFee = parseFloat("{{ domicilio_fee|floatformat:'2' }}");
+        entrega.addEventListener('change', function() {
+            if (this.value === 'domicilio') {
+                domicilioRow.style.display = 'flex';
+                totalFinalSpan.textContent = `$${(totalProductos + domicilioFee).toLocaleString('es-CO')}`;
+            } else {
+                domicilioRow.style.display = 'none';
+                totalFinalSpan.textContent = `$${totalProductos.toLocaleString('es-CO')}`;
+            }
+        });
+        // Inicializar según valor por defecto
+        if (entrega.value === 'domicilio') {
+            domicilioRow.style.display = 'flex';
+            totalFinalSpan.textContent = `$${(totalProductos + domicilioFee).toLocaleString('es-CO')}`;
+        }
+    });
+</script>
+{% endblock %}

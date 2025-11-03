@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Profundicemos en tus gustos{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <h2 class="fw-bold mb-4">Profundicemos en tus gustos</h2>
+    <div class="mb-3">
+        <strong>Búsqueda base:</strong> <span style="color:#1976d2;font-weight:600;">{{ query }}</span>
+    </div>
+    <div class="card p-4 mb-3" id="chat-gustos-container" style="min-height:260px;max-height:400px;overflow-y:auto;background:linear-gradient(90deg,#f8fafc,#e9ecef);">
+        <div id="chat-gustos-messages"></div>
+    </div>
+    <form id="chat-gustos-form" class="d-flex gap-2 mt-2" autocomplete="off" onsubmit="return false;">
+        <input type="text" id="chat-gustos-input" class="form-control" placeholder="Escribe tus gustos, autores, géneros..." autocomplete="off" style="border-radius:18px;">
+        <button type="submit" class="btn btn-primary" style="border-radius:18px;">Enviar</button>
+    </form>
+    <a href="/" class="btn btn-outline mt-4">⬅️ Volver al inicio</a>
+    <script>
+    const gustosForm = document.getElementById('chat-gustos-form');
+    const gustosInput = document.getElementById('chat-gustos-input');
+    const gustosMessages = document.getElementById('chat-gustos-messages');
+    const generoBase = `{{ query|default:'' }}`;
+    let chatStep = 0;
+    let generosElegidos = [];
+    let autorElegido = '';
+    let anioElegido = '';
+
+    function addGustosMessage(msg, sender) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'd-flex mb-2 ' + (sender === 'user' ? 'justify-content-start' : 'justify-content-end');
+        msgDiv.innerHTML = `<div style="max-width:70%;padding:10px 16px;border-radius:18px;font-size:1.05rem;` +
+            (sender === 'user' ? 'background:#1976d2;color:#fff;margin-right:auto;' : 'background:#43a047;color:#fff;margin-left:auto;') +
+            `box-shadow:0 2px 8px #0001;">${msg}</div>`;
+        gustosMessages.appendChild(msgDiv);
+        gustosMessages.scrollTop = gustosMessages.scrollHeight;
+    }
+
+    // Iniciar chat con mensaje del bot
+    window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(() => {
+            addGustosMessage('¡Cuéntame más sobre tus gustos, autores favoritos, géneros o experiencias de lectura! Así podré recomendarte obras aún más personalizadas.', 'bot');
+            chatStep = 1;
+            setTimeout(() => {
+                if (generoBase) {
+                    addGustosMessage(`¿Qué otro género te gusta o solo quieres que profundicemos en ${generoBase}?`, 'bot');
+                    chatStep = 2;
+                }
+            }, 900);
+        }, 400);
+    });
+
+    gustosForm.addEventListener('submit', function() {
+        const userMsg = gustosInput.value.trim();
+        if (!userMsg) return;
+        addGustosMessage(userMsg, 'user');
+        gustosInput.value = '';
+        setTimeout(() => {
+            if (chatStep === 2) {
+                // Si el usuario responde "solo ese" o similar, preguntar por autor
+                if (/solo ese|solo esa|solo ese genero|solo ese género|solo esa genero|solo esa género|solo quiero ese|solo quiero esa|solo|ninguno|ninguna|no|no otro|no otra/i.test(userMsg)) {
+                    // Solo el género base
+                    if (generoBase) generosElegidos = [generoBase];
+                    addGustosMessage('Perfecto, ¿y algún autor te gusta en especial?', 'bot');
+                    chatStep = 3;
+                } else {
+                    // Agregar género base y el nuevo género
+                    if (generoBase && !generosElegidos.includes(generoBase)) generosElegidos.push(generoBase);
+                    if (userMsg && !generosElegidos.includes(userMsg)) generosElegidos.push(userMsg);
+                    addGustosMessage('Perfecto, ¿y te gusta algún autor en especial?', 'bot');
+                    chatStep = 3;
+                }
+            } else if (chatStep === 3) {
+                // Si el usuario responde "no", "ninguno", etc., preguntar por año
+                if (/^no$|^ninguno$|^ninguna$|no tengo|ningun autor|ninguna autora|no me gusta|no en especial/i.test(userMsg.trim())) {
+                    addGustosMessage('Perfecto, ¿te gustan las obras más recientes (del año 2015 hacia el presente) o más antiguas?', 'bot');
+                    chatStep = 4;
+                } else {
+                    autorElegido = userMsg;
+                    addGustosMessage('Perfecto, ¿te gustan las obras más recientes (del año 2015 hacia el presente) o más antiguas?', 'bot');
+                    chatStep = 4;
+                }
+            } else if (chatStep === 4) {
+                // Guardar preferencia de año
+                if (/reciente|actual|moderna|nueva|2015|presente|ahora|moderno|modernas|nuevas/i.test(userMsg)) {
+                    anioElegido = 'recientes';
+                } else if (/antigua|antiguas|vieja|viejas|clasica|clásica|clásicas|clasicas|antes|pasado|pasadas|antiguo|antiguos/i.test(userMsg)) {
+                    anioElegido = 'antiguas';
+                } else {
+                    anioElegido = userMsg;
+                }
+                // Mostrar link de recomendación
+                addGustosMessage('Perfecto, lo tengo. Puedo recomendarte estas obras:', 'bot');
+                // Construir parámetros para el link
+                let params = [];
+                if (generosElegidos.length > 0) params.push('generos=' + encodeURIComponent(generosElegidos.join(',')));
+                if (autorElegido) params.push('autor=' + encodeURIComponent(autorElegido));
+                if (anioElegido) params.push('anio=' + encodeURIComponent(anioElegido));
+                let url = '/recomendaciones-personalizadas/?' + params.join('&');
+                addGustosMessage(`<a href="${url}" class="btn btn-success mt-2" style="border-radius:16px;font-weight:600;">Conoce las obras perfectas para tus gustos</a>`, 'bot');
+                chatStep = 5;
+            }
+        }, 700);
+    });
+    gustosInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            gustosForm.dispatchEvent(new Event('submit'));
+        }
+    });
+    </script>
+</div>
+{% endblock %}

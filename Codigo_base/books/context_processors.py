@@ -6,11 +6,16 @@ def common_context(request):
     authors = Book.objects.values_list('authors', flat=True).distinct().order_by('authors')
     featured_books = Book.objects.all()[:12]
 
+    from .models import Favorite
+    user_favorite_ids = []
+    if request.user.is_authenticated:
+        user_favorite_ids = list(Favorite.objects.filter(user=request.user).values_list('book_id', flat=True))
     return {
-        'app_name': "INKALAB Libros",
+        'app_name': "Bookverse",
         'all_genres': genres,
         'all_authors': authors,
         'featured_books': featured_books,
+        'user_favorite_ids': user_favorite_ids,
     }
 
 def cart_counter(request):

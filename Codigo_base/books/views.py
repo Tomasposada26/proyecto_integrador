@@ -1,3 +1,173 @@
+# Vista para recomendaciones personalizadas desde el chat de gustos
+def recomendaciones_personalizadas(request):
+    generos = request.GET.get('generos', '').strip()
+    autor = request.GET.get('autor', '').strip()
+    anio = request.GET.get('anio', '').strip()
+    libros = Book.objects.all()
+    generos_list = []
+    if generos:
+        generos_list = [g.strip() for g in generos.split(',') if g.strip()]
+        q = Q()
+        for g in generos_list:
+            q |= Q(genre__icontains=g)
+        libros = libros.filter(q)
+    if autor:
+        libros = libros.filter(authors__icontains=autor)
+    # Filtrado de año robusto
+    try:
+        libros = libros.exclude(publication_date__isnull=True).exclude(publication_date='')
+        if anio == 'recientes':
+            libros = libros.filter(publication_date__gte='2016')
+        elif anio == 'antiguas':
+            libros = libros.filter(publication_date__lte='2015')
+    except Exception:
+        pass
+    # Paginación 12 libros por página
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    paginator = Paginator(libros, 12)
+    page = request.GET.get('page')
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+    libros_pagina = page_obj.object_list
+    return render(request, 'books/recomendaciones_personalizadas.html', {
+        'libros': libros_pagina,
+        'generos': generos_list,
+        'autor': autor,
+        'anio': anio,
+        'page_obj': page_obj,
+    })
+# Vista para profundizar en gustos del usuario
+def chat_gustos(request):
+    query = request.GET.get('q', '').strip()
+    return render(request, 'books/chat_gustos.html', {'query': query})
+from django.db.models import Q
+
+# Vista para búsqueda avanzada de libros por autor/género
+def buscar_libros(request):
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    query = request.GET.get('q', '').strip()
+    resultados = []
+    terminos = []
+    page_obj = None
+    if query:
+        # Separar por comas, quitar duplicados, ignorar mayúsculas/minúsculas
+        partes = [t.strip().lower() for t in query.split(',') if t.strip()]
+        terminos = list(set(partes))
+        q_obj = Q()
+        for termino in terminos:
+            # Si el término contiene espacios, priorizar búsqueda por autor completo
+            if ' ' in termino:
+                q_obj |= Q(authors__icontains=termino)
+            else:
+                q_obj |= Q(authors__icontains=termino) | Q(genre__icontains=termino)
+        resultados = Book.objects.filter(q_obj).distinct()
+        paginator = Paginator(resultados, 12)  # 12 libros por página
+        page = request.GET.get('page')
+        try:
+            page_obj = paginator.page(page)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
+        resultados = page_obj.object_list
+    return render(request, 'books/busqueda_resultados.html', {
+        'query': query,
+        'terminos': terminos,
+        'resultados': resultados,
+        'page_obj': page_obj,
+    })
+# Vista para chat sobre el autor
+def chat_autor(request):
+    autor = request.GET.get('q', '')
+    libros_autor = Book.objects.filter(authors__icontains=autor) if autor else []
+    return render(request, 'books/chat_autor.html', {'autor': autor, 'libros_autor': libros_autor})
+from django.shortcuts import get_object_or_404
+
+# Vista para chat sobre la obra
+def chat_obra(request, book_id):
+    libro = get_object_or_404(Book, id=book_id)
+    return render(request, 'books/chat_obra.html', {'libro': libro})
+# ==========================================
+# VISTA PARA RESEÑAR LIBRO O AUTOR (sin IA)
+# ==========================================
+from django.views.decorators.csrf import csrf_exempt
+@csrf_exempt
+def resenar_libro(request):
+    context = {}
+    if request.method == 'POST':
+        query = request.POST.get('prompt', '').strip()
+        if not query:
+            context['error'] = 'Debes ingresar el nombre de un libro o autor.'
+        else:
+            # Buscar por título exacto o autor
+            libro = Book.objects.filter(title__iexact=query).first()
+            if libro:
+                context['libro'] = libro
+            else:
+                libros_autor = Book.objects.filter(authors__icontains=query)
+                if libros_autor.exists():
+                    context['autor'] = query
+                    context['libros_autor'] = libros_autor
+                    # Calcular géneros únicos
+                    generos = set(libros_autor.values_list('genre', flat=True))
+                    context['generos_autor'] = ', '.join(sorted([g for g in generos if g and g != 'Sin género'])) or 'No especificado'
+                    # Calcular promedio de calificación
+                    ratings = [l.average_rating for l in libros_autor if l.average_rating is not None]
+                    if ratings:
+                        context['promedio_autor'] = sum(ratings) / len(ratings)
+                        context['total_libros_autor'] = len(ratings)
+                    else:
+                        context['promedio_autor'] = None
+                        context['total_libros_autor'] = 0
+                else:
+                    context['no_result'] = True
+                    context['query'] = query
+    return render(request, 'books/resena_resultado.html', context)
+# ==========================================
+# 🔹 CHECKOUT (PANEL DE DATOS DE COMPRA)
+# ==========================================
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def checkout_view(request):
+    cart = request.session.get('cart', {})
+    cart_items = []
+    total_price = 0.0
+    for book_id_str, raw_qty in cart.items():
+        try:
+            qty = int(raw_qty)
+        except Exception:
+            qty = 1
+        try:
+            book_id = int(book_id_str)
+            book = Book.objects.get(pk=book_id)
+        except (ValueError, Book.DoesNotExist):
+            continue
+        price = float(book.precio_cop or 0.0)
+        subtotal = price * qty
+        total_price += subtotal
+        cart_items.append({
+            "book": book,
+            "quantity": qty,
+            "subtotal": subtotal,
+        })
+    if not cart_items:
+        messages.error(request, "Tu carrito está vacío")
+        return redirect('cart_view')
+    # El costo de domicilio se suma solo si el usuario lo selecciona (por defecto no)
+    domicilio_fee = 10500
+    total_final = total_price
+    # Si viene por GET, no hay selección aún, pero pasamos ambos valores
+    return render(request, "books/checkout.html", {
+        "cart_items": cart_items,
+        "total_price": round(total_price, 2),
+        "domicilio_fee": domicilio_fee,
+        "total_final": round(total_price, 2),  # Por defecto sin domicilio
+    })
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.utils.decorators import method_decorator
@@ -6,7 +176,7 @@ from django.views.generic import TemplateView, ListView
 from django.db.models import Q, Count
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
-from openai import OpenAI
+import google.generativeai as genai
 import numpy as np
 import os
 import io
@@ -21,14 +191,14 @@ from .models import Book
 # -------------------------------------------------------
 # 🔧 CONFIGURACIÓN OPENAI
 # -------------------------------------------------------
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', 'openAI.env'))
+load_dotenv()
 
-def get_openai_client():
-    """Inicializa el cliente de OpenAI usando la API Key del entorno."""
-    api_key = os.getenv("OPENAI_API_KEY")
+
+def get_gemini_api_key():
+    api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        raise ValueError("❌ No se encontró la API key de OpenAI en las variables de entorno.")
-    return OpenAI(api_key=api_key)
+        raise ValueError("❌ No se encontró la API key de Gemini en las variables de entorno.")
+    return api_key
 
 
 def cosine_similarity(a, b):
@@ -261,7 +431,7 @@ class BookListView(ListView):
         if price_range:
             try:
                 min_price, max_price = map(int, price_range.split('-'))
-                qs = qs.filter(precio__gte=min_price, precio__lte=max_price)
+                qs = qs.filter(precio_cop__gte=min_price, precio_cop__lte=max_price)
             except ValueError:
                 pass
 
@@ -287,9 +457,9 @@ class BookListView(ListView):
         sort_by = request.GET.get('sort_by', '').strip()
         
         if sort_by == 'price_low':
-            qs = qs.order_by('precio')
+            qs = qs.order_by('precio_cop')
         elif sort_by == 'price_high':
-            qs = qs.order_by('-precio')
+            qs = qs.order_by('-precio_cop')
         elif sort_by == 'rating_high':
             qs = qs.order_by('-average_rating')
         elif sort_by == 'rating_low':
@@ -457,13 +627,14 @@ def recommend_book(request):
             })
 
         try:
-            client = get_openai_client()  # ✅ Se inicializa aquí
-
-            response = client.embeddings.create(
-                model="text-embedding-3-small",
-                input=[prompt]
+            api_key = get_gemini_api_key()
+            genai.configure(api_key=api_key)
+            embedding_response = genai.embed_content(
+                model="models/embedding-001",
+                content=prompt,
+                task_type="retrieval_query"
             )
-            prompt_emb = np.array(response.data[0].embedding, dtype=np.float32)
+            prompt_emb = np.array(embedding_response['embedding'], dtype=np.float32)
 
             books_with_similarity = []
             for book in Book.objects.exclude(embeddings__isnull=True):
@@ -598,8 +769,8 @@ def cart_view(request):
         except (ValueError, Book.DoesNotExist):
             continue
 
-        # ✅ Usamos el nuevo campo "precio"
-        price = float(book.precio or 0.0)
+        # ✅ Usamos el campo correcto "precio_cop"
+        price = float(book.precio_cop or 0.0)
         subtotal = round(price * qty, 2)
         total_price += subtotal
 
@@ -744,13 +915,17 @@ def my_favorites(request):
 def toggle_favorite(request, book_id):
     book = get_object_or_404(Book, id=book_id)
     favorite, created = Favorite.objects.get_or_create(user=request.user, book=book)
-    
+    favorited = True
     if not created:
         favorite.delete()
+        favorited = False
         messages.success(request, f"❤️ {book.title} eliminado de favoritos")
     else:
         messages.success(request, f"❤️ {book.title} agregado a favoritos")
-    
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'favorited': favorited})
+
     # Redirigir a la página anterior
     referer = request.META.get('HTTP_REFERER')
     if referer:
@@ -846,15 +1021,13 @@ def create_order_from_cart(request):
         # Calcular total
         total = 0
         order_items_data = []
-        
         for book_id_str, qty in cart.items():
             try:
                 qty = int(qty)
                 book = Book.objects.get(pk=int(book_id_str))
-                price = float(book.precio or 0)
+                price = float(book.precio_cop or 0)
                 subtotal = price * qty
                 total += subtotal
-                
                 order_items_data.append({
                     'book': book,
                     'quantity': qty,
@@ -862,12 +1035,17 @@ def create_order_from_cart(request):
                 })
             except (Book.DoesNotExist, ValueError):
                 continue
-        
+
+        # Sumar domicilio si corresponde
+        tipo_entrega = request.POST.get('entrega', 'recoger')
+        domicilio_fee = 10500 if tipo_entrega == 'domicilio' else 0
+        total_final = total + domicilio_fee
+
         # Crear pedido
         order = Order.objects.create(
             user=request.user,
-            total_price=total,
-            shipping_address=request.POST.get('shipping_address', '')
+            total_price=total_final,
+            shipping_address=request.POST.get('shipping_address', ''),
         )
         
         # Crear items del pedido

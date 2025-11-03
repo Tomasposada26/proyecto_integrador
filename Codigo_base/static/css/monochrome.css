@@ -3,18 +3,35 @@
    Tema monocromático elegante para Librería Acentos
    ====================================================== */
 
+/* Minimalista Moderna */
 :root {
-    --black: #1a1a1a;
-    --dark-gray: #2d2d2d;
-    --medium-gray: #4a4a4a;
-    --light-gray: #e5e5e5;
-    --extra-light-gray: #f5f5f5;
-    --white: #ffffff;
+        --background: #f5f5f5;
+        --primary: #22223b;
+        --secondary: #4a4e69;
+        --accent: #9a8c98;
+        --button-bg: #f2e9e4;
+        --button-bg-alt: #c9ada7;
+        --text: #22223b;
+        --white: #ffffff;
+}
 
-    /* Solo para el HERO */
-    --hero-start: #2c5f5f;
-    --hero-mid: #3d8080;
-    --hero-end: #4da5a5;
+body {
+        background-color: var(--background);
+        color: var(--text);
+}
+
+/* Modo oscuro */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #22223b;
+        --primary: #f5f5f5;
+        --secondary: #9a8c98;
+        --accent: #4a4e69;
+        --button-bg: #4a4e69;
+        --button-bg-alt: #22223b;
+        --text: #f5f5f5;
+        --white: #22223b;
+    }
 }
 
 /* 🧱 ESTRUCTURA GENERAL */

@@ -7,7 +7,7 @@
 <!-- 1. HERO BANNER -->
 <section class="hero-banner fade-in-up">
     <div class="hero-content">
-        <h1 class="hero-title">Bienvenido a INKALAB LIBROS 📚</h1>
+    <h1 class="hero-title">Bienvenido a Bookverse 📚</h1>
         <p class="hero-subtitle">Explora, descubre y enamórate de tu próxima lectura. Inspirado por la Universidad EAFIT.</p>
         <div class="hero-actions">
             <a href="{% url 'book_list' %}" class="btn-hero-primary">
@@ -69,27 +69,294 @@
 
 <!-- 3. RECOMENDADOR IA -->
 <section class="recommender-section">
-    <div class="recommender-card">
+    <div class="recommender-card recommender-fullwidth">
         <div class="recommender-header">
-            <div class="recommender-icon">
-                <i class="bi bi-robot"></i>
+            <div class="recommender-icon" style="position:relative;">
+                <i class="bi bi-robot" style="font-size:2.2rem;"></i>
+                <span id="ia-status-dot" style="position:absolute;bottom:2px;right:2px;width:13px;height:13px;border-radius:50%;background:#2ecc40;border:2px solid #222;display:inline-block;box-shadow:0 0 6px #2ecc40;animation: ia-pulse 1.2s infinite alternate;"></span>
             </div>
             <div>
                 <h2 class="recommender-title">¿No sabes qué leer? Cuéntanos qué te gusta 👇</h2>
-                <p class="recommender-subtitle">Nuestro asistente IA te ayudará a encontrar el libro perfecto</p>
+                <p class="recommender-subtitle">Nuestro asistente IA <span style="font-weight:600;">está en línea</span> para ayudarte a encontrar el libro perfecto</p>
             </div>
         </div>
-        <form action="{% url 'recommend_book' %}" method="post" class="recommender-form">
+    <form action="/buscar/" method="get" class="recommender-form">
+            <div class="recommender-options">
+                <label>
+                    <input type="radio" name="accion_chatbot" value="recomendar" checked> Recomendar libro
+                </label>
+                <label>
+                    <input type="radio" name="accion_chatbot" value="resenar"> Reseñar libro o autor
+                </label>
+            </div>
             {% csrf_token %}
-            <input type="text" 
-                   name="prompt" 
-                   placeholder="Ejemplo: novelas de aventuras con historia romántica"
-                   class="recommender-input"
-                   required>
-            <button type="submit" class="btn-recommend">
-                <i class="bi bi-magic me-2"></i>Recomendar
-            </button>
+            <div class="recommender-input-group" style="margin-top: 18px;">
+          <input type="text" 
+              name="prompt" 
+              id="recommender-input"
+              placeholder="Cuéntanos qué género o autor te gusta..."
+              class="recommender-input"
+              autocomplete="off"
+              required>
+                <button type="button" class="btn-voice" tabindex="-1" aria-label="Entrada por voz" style="margin-left:6px;">
+                    <i class="bi bi-mic"></i>
+                </button>
+                <button type="submit" class="btn-recommend" id="btn-recommend">
+                    <span class="btn-recommend-content"><i class="bi bi-magic me-2"></i><span id="btn-recommend-text">Recomendar</span></span>
+                    <span class="btn-recommend-spinner" style="display:none;"><span class="spinner-border spinner-border-sm"></span></span>
+                </button>
+            </div>
+            <div id="recommender-helper-text" class="recommender-helper-text" style="margin-top:8px; color:rgba(255,255,255,0.85); font-size:0.98rem; text-align:left; min-height:1.2em;">
+                <!-- Eliminado: helper-text externo -->
+            </div>
+            </div>
         </form>
+<style>
+.recommender-options {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    width: 100%;
+    margin: 0 auto 18px auto;
+}
+.recommender-options label {
+    font-size: 1.08rem;
+    font-weight: 500;
+    color: #fff;
+    letter-spacing: -0.01em;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+}
+.recommender-options input[type="radio"] {
+    margin-bottom: 0;
+}
+@media (max-width: 700px) {
+    .recommender-options {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .recommender-options label {
+        font-size: 1rem;
+    }
+}
+.recommender-input-group {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 0;
+    margin-top: 24px;
+}
+.recommender-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    font-size: 1.1rem;
+    padding: 14px 16px;
+    border-radius: 10px 0 0 10px;
+    border-right: none;
+    color: #111 !important;
+    position: relative;
+    background: #fff;
+}
+
+.btn-voice {
+    border-radius: 0;
+    border-left: 1.5px solid #eee;
+    border-right: none;
+    height: 48px;
+    min-width: 48px;
+    font-size: 1.2rem;
+    background: #fff;
+}
+.btn-recommend {
+    border-radius: 0 10px 10px 0;
+    height: 48px;
+    min-width: 100px;
+    font-size: 1.05rem;
+    margin-left: 8px;
+}
+@media (max-width: 700px) {
+    .recommender-input-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .recommender-input, .btn-voice, .btn-recommend {
+        border-radius: 10px !important;
+        width: 100%;
+        min-width: 0;
+        margin-left: 0;
+    }
+    .btn-voice, .btn-recommend {
+        height: 44px;
+    }
+}
+.recommender-section {
+    width: 100%;
+    margin: 0 auto 32px auto;
+    padding: 0;
+}
+.recommender-card.recommender-fullwidth {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 18px;
+    margin: 0;
+    box-sizing: border-box;
+    padding: 32px 40px 32px 40px;
+}
+@media (max-width: 900px) {
+    .recommender-card.recommender-fullwidth {
+        padding: 24px 10px;
+    }
+}
+/* Banner IA ocupa todo el ancho del contenedor */
+.recommender-fullwidth {
+    width: 100%;
+    max-width: none;
+    border-radius: 16px;
+    margin: 0 auto 32px auto;
+    box-sizing: border-box;
+}
+@keyframes ia-pulse {
+    0% { box-shadow: 0 0 6px #2ecc40, 0 0 0 #2ecc40; }
+    100% { box-shadow: 0 0 16px #2ecc40, 0 0 8px #2ecc40; }
+}
+.recommender-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+.btn-voice {
+    background: #fff;
+    border: 1.5px solid #bbb;
+    border-radius: 8px;
+    color: #222;
+    font-size: 1.2rem;
+    padding: 0 12px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border 0.2s, box-shadow 0.2s;
+}
+.btn-voice:hover {
+    border-color: #2D9CDB;
+    box-shadow: 0 2px 8px #2D9CDB22;
+}
+.btn-recommend {
+    position: relative;
+    min-width: 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-recommend-spinner {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+</style>
+<script>
+
+// Declarar todas las variables al inicio para evitar advertencias
+const form = document.querySelector('.recommender-form');
+const radios = document.querySelectorAll('input[name="accion_chatbot"]');
+const btnText = document.getElementById('btn-recommend-text');
+const recommenderInput = document.getElementById('recommender-input');
+const placeholderRecomendar = 'Cuéntanos qué género o autor te gusta...';
+const placeholderResenar = '¿Qué libro o autor quieres que te reseñemos hoy...?';
+
+// Cambiar la acción del formulario según la opción seleccionada
+form.addEventListener('submit', function(e) {
+    const selected = document.querySelector('input[name="accion_chatbot"]:checked');
+    if (selected && selected.value === 'resenar') {
+        form.action = '/resenar/';
+        form.method = 'post';
+    } else {
+        form.action = '/buscar/';
+        form.method = 'get';
+        // Cambiar el name del input a 'q' para la búsqueda avanzada
+        recommenderInput.name = 'q';
+    }
+});
+
+function updateInputUI() {
+    const selected = document.querySelector('input[name="accion_chatbot"]:checked');
+    if (selected) {
+        if (selected.value === 'recomendar') {
+            recommenderInput.placeholder = placeholderRecomendar;
+            btnText.textContent = 'Recomendar';
+        } else {
+            recommenderInput.placeholder = placeholderResenar;
+            btnText.textContent = 'Reseñar';
+        }
+    }
+}
+
+// Inicializar placeholder y texto botón al cargar
+updateInputUI();
+
+radios.forEach(radio => {
+    radio.addEventListener('change', updateInputUI);
+});
+// --- Reconocimiento de voz para el botón de micrófono ---
+const micBtn = document.querySelector('.btn-voice');
+const input = document.getElementById('recommender-input');
+let recognizing = false;
+let recognition;
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    micBtn.addEventListener('click', function() {
+        if (recognizing) {
+            recognition.stop();
+            return;
+        }
+        recognition.start();
+    });
+    recognition.onstart = function() {
+        recognizing = true;
+        micBtn.style.background = '#e3f0fa';
+        micBtn.style.color = '#178f7a';
+    };
+    recognition.onend = function() {
+        recognizing = false;
+        micBtn.style.background = '';
+        micBtn.style.color = '';
+    };
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        input.value = transcript;
+        input.focus();
+    };
+} else {
+    micBtn.disabled = true;
+    micBtn.title = 'Reconocimiento de voz no soportado en este navegador';
+}
+// Sugerencias rápidas
+document.querySelectorAll('.chip-suggestion').forEach(function(chip) {
+    chip.addEventListener('click', function() {
+        document.getElementById('recommender-input').value = this.textContent;
+        document.getElementById('recommender-input').focus();
+    });
+});
+// Feedback visual al enviar
+const btnRecommend = document.getElementById('btn-recommend');
+const btnContent = btnRecommend.querySelector('.btn-recommend-content');
+const btnSpinner = btnRecommend.querySelector('.btn-recommend-spinner');
+form.addEventListener('submit', function() {
+    btnContent.style.display = 'none';
+    btnSpinner.style.display = 'inline-block';
+    btnRecommend.disabled = true;
+});
+</script>
     </div>
 </section>
 
@@ -317,8 +584,8 @@
 
 /* HERO BANNER */
 .hero-banner {
-    background: linear-gradient(135deg, #2c5f5f 0%, #3d8080 50%, #4da5a5 100%);
-    color: var(--white);
+    background: #232323;
+    color: #fff !important;
     padding: 80px 20px;
     text-align: center;
     margin-bottom: 60px;
@@ -614,7 +881,8 @@
 
 .recommender-form {
     display: flex;
-    gap: 12px;
+    flex-direction: column;
+    gap: 0;
 }
 
 .recommender-input {
@@ -622,19 +890,20 @@
     padding: 14px 20px;
     border: 2px solid rgba(255,255,255,0.2);
     border-radius: 12px;
-    background: rgba(255,255,255,0.1);
+    background: #fff;
     color: var(--white);
     font-size: 1rem;
 }
 
 .recommender-input::placeholder {
-    color: rgba(255,255,255,0.6);
+    color: #888;
+    transition: color 0.2s;
 }
 
 .recommender-input:focus {
     outline: none;
     border-color: var(--white);
-    background: rgba(255,255,255,0.15);
+    background: #fff;
 }
 
 .btn-recommend {

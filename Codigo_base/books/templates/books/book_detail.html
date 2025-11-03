@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 {% load static %}
 
 {% block title %}{{ book.title }} - Detalle{% endblock %}
@@ -25,6 +26,14 @@
         </ol>
     </nav>
 </div>
+<style>
+    .breadcrumb-container, .breadcrumb, .breadcrumb-item, .breadcrumb-separator {
+        color: #fff !important;
+    }
+    .breadcrumb a, .breadcrumb-item a {
+        color: #fff !important;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -36,7 +45,8 @@
                 <img src="{{ book.image_url|default:'https://placehold.co/300x450?text=Sin+Imagen' }}" 
                      alt="Portada de {{ book.title }}" 
                      class="img-fluid rounded-3 shadow-sm book-cover"
-                     onerror="this.onerror=null;this.src='https://placehold.co/300x450?text=Sin+Imagen';">
+                     style="max-width: 340px; max-height: 510px; width: 100%; height: auto;"
+                     onerror="this.onerror=null;this.src='https://placehold.co/340x510?text=Sin+Imagen';">
 
                 <!-- Badge -->
                 <div class="book-badge">
@@ -61,8 +71,8 @@
             <!-- 💰 Precio -->
             <div class="price-section mb-3">
                 <h3 class="price-amount mb-0">
-                    {% if book.precio %}
-                        ${{ book.precio|floatformat:0 }}
+                    {% if book.precio_cop %}
+                        ${{ book.precio_cop|floatformat:0|intcomma }}
                     {% else %}
                         Precio no disponible
                     {% endif %}
@@ -221,10 +231,10 @@
                     <p class="review-comment">{{ review.comment }}</p>
                 </div>
                 <div class="review-footer">
-                    <button class="btn-helpful" onclick="location.href='{% url 'mark_review_helpful' review.id %}'">
+                    <a href="{% url 'mark_review_helpful' review.id %}" class="btn-helpful">
                         <i class="bi bi-hand-thumbs-up me-1"></i>
                         Útil ({{ review.helpful_count }})
-                    </button>
+                    </a>
                     {% if review.user == user %}
                     <span class="review-badge">Tu reseña</span>
                     {% endif %}
@@ -274,9 +284,14 @@
 
 <style>
 /* 🧱 ESTRUCTURA DEL DETALLE (Monocromático) */
+/* Portada más grande */
 .book-cover {
     border: 1px solid var(--light-gray);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    max-width: 340px;
+    max-height: 510px;
+    width: 100%;
+    height: auto;
 }
 .book-cover:hover {
     transform: scale(1.03);

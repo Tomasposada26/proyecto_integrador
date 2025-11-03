@@ -68,7 +68,6 @@
         <p class="book-genre">
           <i class="bi bi-bookmark me-1"></i>{{ book.genre }}
         </p>
-        
         <div class="book-pricing">
           <span class="book-price">
             {% if book.precio %}
@@ -85,11 +84,18 @@
             {% endif %}
           </span>
         </div>
-
-        <div class="book-footer">
+        <div class="book-footer d-flex justify-content-between align-items-center mt-2">
           <a href="{% url 'book_detail' book.id %}" class="view-details-btn">
             Ver detalles <i class="bi bi-arrow-right ms-1"></i>
           </a>
+          {% if user.is_authenticated %}
+          <form action="{% url 'toggle_favorite' book.id %}" method="post" class="favorite-form" data-book-id="{{ book.id }}">
+            {% csrf_token %}
+            <button type="submit" class="favorite-btn {% if book.id in user_favorite_ids %}active{% endif %}" aria-label="Agregar a favoritos">
+              <i class="bi bi-heart-fill"></i>
+            </button>
+          </form>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -118,6 +124,69 @@
   </a>
 </div>
 {% endif %}
+
+<style>
+/* Wishlist/Favorite Button */
+.favorite-btn {
+  background: none;
+  border: none;
+  padding: 0.3em 0.5em;
+  color: #bbb;
+  font-size: 1.4rem;
+  transition: color 0.2s, transform 0.2s;
+  cursor: pointer;
+  outline: none;
+  position: relative;
+  z-index: 2;
+}
+.favorite-btn.active,
+.favorite-btn:hover {
+  color: #e63946;
+  animation: heart-pulse 0.4s;
+}
+.favorite-btn i {
+  pointer-events: none;
+  transition: color 0.2s;
+}
+@keyframes heart-pulse {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.25); }
+  60% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+.book-item {
+  transition: transform 0.25s cubic-bezier(.22,1,.36,1), box-shadow 0.2s;
+}
+.book-item:hover {
+  transform: translateY(-6px) scale(1.025);
+  box-shadow: 0 10px 32px rgba(0,0,0,0.13);
+}
+</style>
+
+<script>
+// AJAX toggle for wishlist/favorite
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.favorite-form').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const btn = form.querySelector('.favorite-btn');
+      fetch(form.action, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+      })
+      .then(res => res.json())
+      .then(data => {
+        btn.classList.toggle('active', data.favorited);
+        btn.blur();
+      })
+      .catch(() => { btn.classList.toggle('active'); });
+    });
+  });
+});
+</script>
 
 
 <style>

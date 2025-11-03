@@ -1,4 +1,4 @@
-# Inkalab Libros
+# Bookverse
 
 Sistema de gestión y venta de libros en línea con integración de inventario externo, promociones destacadas y módulo de pedidos con opción de recogida en tienda.  
 Desarrollado con **Django** y **PostgreSQL**, utilizando control de versiones en GitHub para trabajo colaborativo.

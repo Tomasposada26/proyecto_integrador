@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 
 {% block title %}Catálogo de Libros - {{ app_name }}{% endblock %}
 
@@ -18,6 +19,14 @@
     </ol>
   </nav>
 </div>
+<style>
+  .breadcrumb-container, .breadcrumb, .breadcrumb-item, .breadcrumb-separator {
+    color: #fff !important;
+  }
+  .breadcrumb a, .breadcrumb-item a {
+    color: #fff !important;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -45,7 +54,32 @@
         </a>
       </div>
 
+
       <form method="get" action="" id="filterForm">
+        <!-- 🔍 Búsqueda por palabra clave -->
+        <div class="filter-section" style="border-bottom: none; padding: 18px 22px 0 22px;">
+          <label for="search-q" class="form-label fw-bold mb-2" style="font-size:0.97rem;">Buscar por título, autor o género</label>
+          <div class="input-group">
+            <input type="text" class="form-control search-filter-input" id="search-q" name="q" placeholder="Ej: García Márquez, Fantasía, Cien años..." value="{{ request.GET.q|default:'' }}" autocomplete="off" style="border:2px solid var(--light-gray);">
+            <button class="btn search-filter-btn" type="submit" title="Buscar" style="background: linear-gradient(180deg, var(--white) 0%, var(--extra-light-gray) 100%); border:2px solid var(--light-gray); border-left:none;"><i class="bi bi-search"></i></button>
+          </div>
+<style>
+  .search-filter-input:focus {
+    border-color: var(--black);
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+    outline: none;
+  }
+  .search-filter-btn {
+    color: var(--black);
+    border-radius: 0 10px 10px 0;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+  .search-filter-btn:hover {
+    background: var(--extra-light-gray);
+  }
+</style>
+        </div>
 
         <!-- 📊 Ordenar Por -->
         <div class="filter-section">
@@ -248,6 +282,44 @@
           <a href="?" class="btn btn-reset">
             <i class="bi bi-arrow-counterclockwise me-2"></i>Resetear Todo
           </a>
+        <!-- Filtros aplicados -->
+        {% if request.GET.q or selected_genres or selected_authors or request.GET.price_range or request.GET.rating or request.GET.year %}
+        <div class="applied-filters-list" style="margin-top:18px;">
+          <span class="fw-bold" style="font-size:0.97rem;">Filtros aplicados:</span>
+          <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;">
+            {% if request.GET.q %}
+              <span class="applied-filter-item">{{ request.GET.q }}
+                <a href="{{ request.get_full_path|cut:'q='|cut:'&&'|cut:'&q=' }}" style="color:#e53935; text-decoration:none; margin-left:4px; font-weight:bold;">×</a>
+              </span>
+            {% endif %}
+            {% for g in selected_genres %}
+              <span class="applied-filter-item">{{ g }}
+                <a href="{{ request.get_full_path|cut:'genre='|cut:'&&'|cut:'&genre=' }}" style="color:#e53935; text-decoration:none; margin-left:4px; font-weight:bold;">×</a>
+              </span>
+            {% endfor %}
+            {% for a in selected_authors %}
+              <span class="applied-filter-item">{{ a }}
+                <a href="{{ request.get_full_path|cut:'author='|cut:'&&'|cut:'&author=' }}" style="color:#e53935; text-decoration:none; margin-left:4px; font-weight:bold;">×</a>
+              </span>
+            {% endfor %}
+            {% if request.GET.price_range %}
+              <span class="applied-filter-item">Precio: {{ request.GET.price_range }}
+                <a href="{{ request.get_full_path|cut:'price_range='|cut:'&&'|cut:'&price_range=' }}" style="color:#e53935; text-decoration:none; margin-left:4px; font-weight:bold;">×</a>
+              </span>
+            {% endif %}
+            {% if request.GET.rating %}
+              <span class="applied-filter-item">Calificación: {{ request.GET.rating }}
+                <a href="{{ request.get_full_path|cut:'rating='|cut:'&&'|cut:'&rating=' }}" style="color:#e53935; text-decoration:none; margin-left:4px; font-weight:bold;">×</a>
+              </span>
+            {% endif %}
+            {% if request.GET.year %}
+              <span class="applied-filter-item">Año: {{ request.GET.year }}
+                <a href="{{ request.get_full_path|cut:'year='|cut:'&&'|cut:'&year=' }}" style="color:#e53935; text-decoration:none; margin-left:4px; font-weight:bold;">×</a>
+              </span>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
         </div>
       </form>
     </div>
@@ -282,8 +354,8 @@
           <p class="book-author"><i class="bi bi-person me-1"></i>{{ book.authors|truncatewords:3 }}</p>
           <div class="book-pricing">
             <span class="book-price">
-              {% if book.precio %}
-                ${{ book.precio|floatformat:0 }}
+              {% if book.precio_cop %}
+                ${{ book.precio_cop|floatformat:0|intcomma }}
               {% else %}
                 Precio no disponible
               {% endif %}
@@ -292,10 +364,18 @@
               {% if book.average_rating %}⭐ {{ book.average_rating|floatformat:2 }}{% else %}Sin calificación{% endif %}
             </span>
           </div>
-          <div class="book-footer">
+          <div class="book-footer d-flex justify-content-between align-items-center mt-2">
             <a href="{% url 'book_detail' book.id %}" class="view-details-btn">
               Ver más <i class="bi bi-arrow-right ms-1"></i>
             </a>
+            {% if user.is_authenticated %}
+            <form action="{% url 'toggle_favorite' book.id %}" method="post" class="favorite-form" data-book-id="{{ book.id }}">
+              {% csrf_token %}
+              <button type="submit" class="favorite-btn {% if book.id in user_favorite_ids %}active{% endif %}" aria-label="Agregar a favoritos">
+                <i class="bi bi-heart-fill"></i>
+              </button>
+            </form>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -1116,6 +1196,69 @@
   .top-preview-grid { grid-template-columns: 1fr; }
 }
 
+</style>
+
+<script>
+// AJAX toggle for wishlist/favorite
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.favorite-form').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const btn = form.querySelector('.favorite-btn');
+      fetch(form.action, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+      })
+      .then(res => res.json())
+      .then(data => {
+        btn.classList.toggle('active', data.favorited);
+        btn.blur();
+      })
+      .catch(() => { btn.classList.toggle('active'); });
+    });
+  });
+});
+</script>
+
+<style>
+/* Wishlist/Favorite Button */
+.favorite-btn {
+  background: none;
+  border: none;
+  padding: 0.3em 0.5em;
+  color: #bbb;
+  font-size: 1.4rem;
+  transition: color 0.2s, transform 0.2s;
+  cursor: pointer;
+  outline: none;
+  position: relative;
+  z-index: 2;
+}
+.favorite-btn.active,
+.favorite-btn:hover {
+  color: #e63946;
+  animation: heart-pulse 0.4s;
+}
+.favorite-btn i {
+  pointer-events: none;
+  transition: color 0.2s;
+}
+@keyframes heart-pulse {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.25); }
+  60% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+.book-item {
+  transition: transform 0.25s cubic-bezier(.22,1,.36,1), box-shadow 0.2s;
+}
+.book-item:hover {
+  transform: translateY(-6px) scale(1.025);
+  box-shadow: 0 10px 32px rgba(0,0,0,0.13);
+}
 </style>
 
 <script>

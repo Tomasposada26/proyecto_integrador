@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 {% load static %}
 
 
@@ -40,8 +41,8 @@
 
                     <td class="text-center">
                         <span class="fw-bold" style="color: var(--black); font-size: 1.05rem;">
-                            {% if item.book.precio %}
-                                ${{ item.book.precio|floatformat:0 }}
+                            {% if item.book.precio_cop %}
+                                ${{ item.book.precio_cop|floatformat:0|intcomma }}
                             {% else %}
                                 N/A
                             {% endif %}
@@ -70,8 +71,8 @@
 
                     <td class="text-center">
                         <span class="fw-bold" style="color: var(--black); font-size: 1.1rem;">
-                            {% if item.book.precio %}
-                                ${{ item.book.precio|floatformat:0 }}
+                            {% if item.book.precio_cop %}
+                                ${{ item.subtotal|floatformat:0|intcomma }}
                             {% else %}
                                 N/A
                             {% endif %}
@@ -113,8 +114,8 @@
             </div>
             <div class="summary-row total-row">
     <span class="summary-label">Total general:</span>
-    <span class="summary-value total-value">
-        ${{ total_price|floatformat:0 }}
+                    <span class="summary-value total-value">
+                        ${{ total_price|floatformat:0|intcomma }}
     </span>
 </div>
 
@@ -132,11 +133,9 @@
                 </button>
             </form>
             <form method="post" action="{% url 'create_order' %}" style="display: inline;">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-main">
+    <a href="{% url 'checkout' %}" class="btn btn-main">
         <i class="bi bi-credit-card"></i> Finalizar Compra
-    </button>
-</form>
+    </a>
 
         </div>
     </div>

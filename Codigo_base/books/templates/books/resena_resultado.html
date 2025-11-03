@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Resultado de reseña{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <h2 class="fw-bold mb-4">Resultado de búsqueda para reseñar</h2>
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% elif libro %}
+        <div class="card mb-4 p-4 shadow-sm">
+            <div class="row g-4 align-items-center">
+                <div class="col-md-3 text-center">
+                    {% if libro.image_url %}
+                        <img src="{{ libro.image_url }}" alt="Portada" style="max-width:180px;max-height:260px;" class="rounded shadow mb-2">
+                    {% elif libro.cover %}
+                        <img src="{{ libro.cover.url }}" alt="Portada" style="max-width:180px;max-height:260px;" class="rounded shadow mb-2">
+                    {% else %}
+                        <img src="/static/img/default_cover.jpg" alt="Sin portada" style="max-width:180px;max-height:260px;" class="rounded shadow mb-2">
+                    {% endif %}
+                </div>
+                <div class="col-md-9">
+                    <h3 class="fw-bold" style="color:#232323;">{{ libro.title }}</h3>
+                    <p><strong>Autor(es):</strong> {{ libro.authors }}</p>
+                    <p><strong>Género:</strong> {{ libro.genre|default:'No especificado' }}</p>
+                    <p><strong>Año de publicación:</strong> {{ libro.publication_date|default:'-' }}</p>
+                    <p><strong>Descripción:</strong> {{ libro.description|default:'Sin descripción.' }}</p>
+                    <div class="mb-2">
+                        <strong>Calificación:</strong>
+                        {% if libro.average_rating %}
+                            <span style="color:#ffc107; font-size:1.2rem;">
+                                {% for i in "12345" %}
+                                    {% if i|add:0 <= libro.average_rating %}
+                                        <i class="bi bi-star-fill"></i>
+                                    {% elif i|add:0 <= libro.average_rating|floatformat:0 %}
+                                        <i class="bi bi-star-half"></i>
+                                    {% else %}
+                                        <i class="bi bi-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <span class="ms-2">{{ libro.average_rating|floatformat:2 }}</span>
+                            </span>
+                        {% else %}
+                            <span class="text-muted">Sin calificación</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% elif autor and libros_autor %}
+        <div class="mb-3">
+            <strong>Autor:</strong> {{ autor }}<br>
+            <strong>Géneros:</strong> {{ generos_autor|default:'-' }}<br>
+            <strong>Calificación general:</strong>
+            {% if promedio_autor %}
+                <span style="color:#ffc107; font-size:1.1rem;">
+                    {% for i in "12345" %}
+                        {% if i|add:0 <= promedio_autor %}
+                            <i class="bi bi-star-fill"></i>
+                        {% elif i|add:0 <= promedio_autor|floatformat:0 %}
+                            <i class="bi bi-star-half"></i>
+                        {% else %}
+                            <i class="bi bi-star"></i>
+                        {% endif %}
+                    {% endfor %}
+                    <span class="ms-2">{{ promedio_autor|floatformat:2 }}</span>
+                </span>
+            {% else %}
+                <span class="text-muted">Sin calificación</span>
+            {% endif %}
+        </div>
+    <button id="toggle-obras-btn" class="btn btn-primary mb-4" type="button" onclick="toggleObrasAutor()">Ver sus obras</button>
+    <div id="obras-autor" style="display:none;">
+            <div class="row">
+                {% for libro in libros_autor %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 p-3 shadow-sm">
+                        {% if libro.image_url %}
+                            <img src="{{ libro.image_url }}" alt="Portada" style="max-width:120px;max-height:180px;" class="mb-2 rounded">
+                        {% elif libro.cover %}
+                            <img src="{{ libro.cover.url }}" alt="Portada" style="max-width:120px;max-height:180px;" class="mb-2 rounded">
+                        {% else %}
+                            <img src="/static/img/default_cover.jpg" alt="Sin portada" style="max-width:120px;max-height:180px;" class="mb-2 rounded">
+                        {% endif %}
+                        <h5 class="fw-bold" style="color:#232323;">{{ libro.title }}</h5>
+                        <p><strong>Género:</strong> {{ libro.genre|default:'No especificado' }}</p>
+                        <p><strong>Año:</strong> {{ libro.publication_date|default:'-' }}</p>
+                        <p><strong>Descripción:</strong> {{ libro.description|default:'Sin descripción.' }}</p>
+                        <div class="mb-2">
+                            <strong>Calificación:</strong>
+                            {% if libro.average_rating %}
+                                <span style="color:#ffc107; font-size:1.1rem;">
+                                    {% for i in "12345" %}
+                                        {% if i|add:0 <= libro.average_rating %}
+                                            <i class="bi bi-star-fill"></i>
+                                        {% elif i|add:0 <= libro.average_rating|floatformat:0 %}
+                                            <i class="bi bi-star-half"></i>
+                                        {% else %}
+                                            <i class="bi bi-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="ms-2">{{ libro.average_rating|floatformat:2 }}</span>
+                                </span>
+                            {% else %}
+                                <span class="text-muted">Sin calificación</span>
+                            {% endif %}
+                        </div>
+                        <div class="mt-2">
+                            <a href="/chat-obra/{{ libro.id }}/" class="btn btn-success btn-sm" style="border-radius:16px;">Conocer más</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% elif no_result %}
+        <div class="alert alert-warning">No se encontró ningún libro ni autor con el nombre "{{ query }}".</div>
+    {% endif %}
+    {% if autor and libros_autor %}
+    <div class="chatbot-bar mt-4 mb-2 p-3 rounded shadow-sm" style="background:linear-gradient(90deg,#f8fafc,#e9ecef);border:1.5px solid #e0e0e0;display:flex;align-items:center;justify-content:center;">
+        <a href="/chat-autor/?q={{ autor|urlencode }}" style="font-size:1.08rem;color:#178f7a;font-weight:600;text-decoration:underline;">
+            ¿quieres saber algo de este autor?
+        </a>
+    </div>
+    {% elif libro %}
+    <div class="chatbot-bar mt-4 mb-2 p-3 rounded shadow-sm" style="background:linear-gradient(90deg,#f8fafc,#e9ecef);border:1.5px solid #e0e0e0;display:flex;align-items:center;justify-content:center;">
+        <a href="/chat-obra/{{ libro.id }}/" style="font-size:1.08rem;color:#178f7a;font-weight:600;text-decoration:underline;">
+            ¿quieres saber algo acerca de esta obra?
+        </a>
+    </div>
+    {% endif %}
+</div>
+<script>
+function toggleObrasAutor() {
+    var obras = document.getElementById('obras-autor');
+    var btn = document.getElementById('toggle-obras-btn');
+    if (obras.style.display === 'none' || obras.style.display === '') {
+        obras.style.display = 'block';
+        btn.textContent = 'Ocultar obras';
+    } else {
+        obras.style.display = 'none';
+        btn.textContent = 'Ver sus obras';
+    }
+}
+</script>
+    <a href="/" class="btn btn-outline mt-4">⬅️ Volver al inicio</a>
+</div>
+{% endblock %}

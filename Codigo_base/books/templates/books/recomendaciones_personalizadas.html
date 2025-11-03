@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Obras recomendadas para ti{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <h2 class="fw-bold mb-4">Obras recomendadas para ti</h2>
+    <div class="mb-3">
+        {% if generos %}
+            {% for g in generos %}
+                <span class="badge bg-primary me-2">Género: {{ g }}</span>
+            {% endfor %}
+        {% endif %}
+        {% if autor %}<span class="badge bg-success me-2">Autor: {{ autor }}</span>{% endif %}
+        {% if anio %}<span class="badge bg-info">Año: {{ anio|title }}</span>{% endif %}
+    </div>
+    {% if libros %}
+        <div class="row">
+            {% for libro in libros %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 p-3 shadow-sm">
+                    {% if libro.image_url %}
+                        <img src="{{ libro.image_url }}" alt="Portada" style="max-width:120px;max-height:180px;" class="mb-2 rounded">
+                    {% elif libro.cover %}
+                        <img src="{{ libro.cover.url }}" alt="Portada" style="max-width:120px;max-height:180px;" class="mb-2 rounded">
+                    {% else %}
+                        <img src="/static/img/default_cover.jpg" alt="Sin portada" style="max-width:120px;max-height:180px;" class="mb-2 rounded">
+                    {% endif %}
+                    <h5 class="fw-bold" style="color:#232323;">{{ libro.title }}</h5>
+                    <p><strong>Autor(es):</strong> {{ libro.authors }}</p>
+                    <p><strong>Género:</strong> {{ libro.genre|default:'No especificado' }}</p>
+                    <p><strong>Año:</strong> {{ libro.publication_date|default:'-' }}</p>
+                    <div class="mt-2">
+                        <a href="/chat-obra/{{ libro.id }}/" class="btn btn-success btn-sm" style="border-radius:16px;">Conocer más</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if page_obj and page_obj.paginator.num_pages > 1 %}
+        <nav aria-label="Paginación de recomendaciones">
+            <ul class="pagination justify-content-center mt-4">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?{% if generos %}generos={{ generos|join:', ' }}&{% endif %}{% if autor %}autor={{ autor }}&{% endif %}{% if anio %}anio={{ anio }}&{% endif %}page={{ page_obj.previous_page_number }}">Anterior</a></li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?{% if generos %}generos={{ generos|join:', ' }}&{% endif %}{% if autor %}autor={{ autor }}&{% endif %}{% if anio %}anio={{ anio }}&{% endif %}page={{ page_obj.next_page_number }}">Siguiente</a></li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-warning">No se encontraron obras que coincidan con tus gustos.</div>
+    {% endif %}
+    <a href="/" class="btn btn-outline mt-4">⬅️ Volver al inicio</a>
+</div>
+{% endblock %}

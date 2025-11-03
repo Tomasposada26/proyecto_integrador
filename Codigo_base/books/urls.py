@@ -16,6 +16,13 @@ urlpatterns = [
     path('about/', AboutPageView.as_view(), name='about'),
     path('catalogo/', BookListView.as_view(), name='book_list'),
     path('books/search/', BookSearchView.as_view(), name='book_search'),
+    # Reseñar libro o autor (sin IA)
+    path('resenar/', views.resenar_libro, name='resenar_libro'),
+    path('chat-obra/<int:book_id>/', views.chat_obra, name='chat_obra'),
+    path('chat-autor/', views.chat_autor, name='chat_autor'),
+    path('chat-gustos/', views.chat_gustos, name='chat_gustos'),
+    path('buscar/', views.buscar_libros, name='buscar_libros'),
+    path('recomendaciones-personalizadas/', views.recomendaciones_personalizadas, name='recomendaciones_personalizadas'),
     path('books/statistics/', statistics_view, name='book_statistics'),
     path('promociones/', promociones_view, name='promociones'),
     path('books/filter-options/', filter_options_ajax, name='books_filter_options'),
@@ -32,7 +39,8 @@ urlpatterns = [
     path('cart/update/<int:book_id>/<str:action>/', views.update_cart, name='update_cart'),
     path('cart/remove/<int:book_id>/', views.remove_from_cart, name='remove_from_cart'),
     path('cart/clear/', views.clear_cart, name='clear_cart'),
-    path('cart/checkout/', create_order_from_cart, name='create_order'),
+    path('cart/checkout/', views.checkout_view, name='checkout'),
+    path('cart/confirm/', create_order_from_cart, name='create_order'),
     
     # 🆕 PERFIL DE USUARIO
     path('perfil/', UserProfileView.as_view(), name='user_profile'),

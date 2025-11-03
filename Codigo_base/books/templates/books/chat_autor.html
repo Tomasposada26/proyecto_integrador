@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Chat sobre {{ autor }}{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <div class="mb-4">
+        <h2 class="fw-bold">Chat sobre <span style="color:#232323">{{ autor }}</span></h2>
+        <div class="d-flex align-items-center gap-3 mt-2">
+            {% if libros_autor and libros_autor.0.image_url %}
+                <img src="{{ libros_autor.0.image_url }}" alt="Portada" style="max-width:70px;max-height:100px;" class="rounded shadow">
+            {% endif %}
+            <div>
+                <div><strong>Obras encontradas:</strong> {{ libros_autor|length }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="card p-4 mb-3" id="chat-container" style="min-height:260px;max-height:400px;overflow-y:auto;background:linear-gradient(90deg,#f8fafc,#e9ecef);">
+        <div id="chat-messages"></div>
+    </div>
+    <form id="chat-form" class="d-flex gap-2 mt-2" autocomplete="off" onsubmit="return false;">
+        <input type="text" id="chat-input" class="form-control" placeholder="Escribe tu mensaje..." autocomplete="off" style="border-radius:18px;">
+        <button type="submit" class="btn btn-primary" style="border-radius:18px;">Enviar</button>
+    </form>
+    <a href="/" class="btn btn-outline mt-4">⬅️ Volver al inicio</a>
+    <script>
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+    // Simulación de respuesta del bot
+    function fakeBotReply(userMsg) {
+        return 'Esta es una respuesta automática sobre el autor.';
+    }
+    function addMessage(msg, sender) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'd-flex mb-2 ' + (sender === 'user' ? 'justify-content-start' : 'justify-content-end');
+        msgDiv.innerHTML = `<div style="max-width:70%;padding:10px 16px;border-radius:18px;font-size:1.05rem;` +
+            (sender === 'user' ? 'background:#1976d2;color:#fff;margin-right:auto;' : 'background:#43a047;color:#fff;margin-left:auto;') +
+            `box-shadow:0 2px 8px #0001;">${msg}</div>`;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    chatForm.addEventListener('submit', function() {
+        const userMsg = chatInput.value.trim();
+        if (!userMsg) return;
+        addMessage(userMsg, 'user');
+        chatInput.value = '';
+        setTimeout(() => {
+            const botMsg = fakeBotReply(userMsg);
+            addMessage(botMsg, 'bot');
+        }, 600);
+    });
+    chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    });
+    </script>
+{% endblock %}
