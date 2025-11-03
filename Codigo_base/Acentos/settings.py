@@ -15,7 +15,7 @@ SECRET_KEY = 'django-insecure-reemplaza-esto-por-una-clave-real'
 DEBUG = True
 ALLOWED_HOSTS = ['34.226.190.22']
 
-# Aplicaciones instaladas
+# Aplicaciones instalada
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
