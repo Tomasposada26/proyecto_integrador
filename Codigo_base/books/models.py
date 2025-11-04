@@ -115,8 +115,8 @@ class Review(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
     rating = models.IntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
-        help_text="Calificación de 1 a 5 estrellas"
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        help_text="Calificación de 1 a 10 estrellas"
     )
     comment = models.TextField(max_length=1000, help_text="Tu opinión sobre el libro")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -128,4 +128,4 @@ class Review(models.Model):
         unique_together = ('book', 'user')
 
     def __str__(self):
-        return f"{self.user.username} - {self.book.title} ({self.rating}⭐)"
+        return f"{self.user.username} - {self.book.title} ({self.rating}/10⭐)"
