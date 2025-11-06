@@ -16,6 +16,27 @@
                 <div><strong>Autor(es):</strong> {{ libro.authors }}</div>
                 <div><strong>Año:</strong> {{ libro.publication_date|default:'-' }}</div>
                 <div><strong>Género:</strong> {{ libro.genre|default:'No especificado' }}</div>
+                <div>
+                    <strong>Calificación:</strong>
+                    <span style="color: #FFD700; font-size: 1.1em;">
+                        {% if libro.average_rating %}
+                            {% with rating=libro.average_rating|floatformat:1 %}
+                                {% for i in "12345" %}
+                                    {% if libro.average_rating >= forloop.counter %}
+                                        <i class="bi bi-star-fill"></i>
+                                    {% elif libro.average_rating >= forloop.counter0|add:".5" %}
+                                        <i class="bi bi-star-half"></i>
+                                    {% else %}
+                                        <i class="bi bi-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <span style="color:#232323;font-size:0.98em;">({{ rating }})</span>
+                            {% endwith %}
+                        {% else %}
+                            <span style="color:#888">Sin calificación</span>
+                        {% endif %}
+                    </span>
+                </div>
             </div>
         </div>
     </div>
@@ -33,7 +54,18 @@
     const chatMessages = document.getElementById('chat-messages');
     // Simulación de respuesta del bot
     function fakeBotReply(userMsg) {
-        // Aquí puedes poner lógica real o IA
+        const msg = userMsg.toLowerCase();
+        if (/de que trata|de qué trata|sobre que trata|sobre qué trata|de que va|de qué va|sinopsis|resumen/.test(msg)) {
+            return `{{ libro.description|default:'No hay sinopsis disponible para esta obra.' }}`;
+        }
+        if (/cuantas paginas|cuántas páginas|numero de paginas|número de páginas|paginas tiene|páginas tiene|cuantos paginas|cuántos páginas/.test(msg)) {
+            return `Este libro tiene {{ libro.num_pages|default:'un número de páginas no especificado' }} páginas.`;
+        }
+        if (/recomiendas.*regalo.*niñ|regalar.*niñ|para un niñ|para una niñ|niño|niña/.test(msg) && /regalo|comprar|recomiendas/.test(msg)) {
+            let calificacion = `{{ libro.average_rating|default:'sin calificación' }}`;
+            let grupo = `{{ libro.dominant_age_group|default:'público general' }}`;
+            return `Es un libro con una calificación de: ${calificacion} y está destinado para: ${grupo}, por lo que sí te lo recomiendo.`;
+        }
         return 'Esta es una respuesta automática sobre la obra.';
     }
     function addMessage(msg, sender) {
@@ -45,6 +77,12 @@
         chatMessages.appendChild(msgDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
+
+    // Mensaje inicial del bot al cargar la página
+    window.addEventListener('DOMContentLoaded', function() {
+        addMessage('¿Qué quieres saber acerca de {{ libro.title }}?', 'bot');
+    });
+
     chatForm.addEventListener('submit', function() {
         const userMsg = chatInput.value.trim();
         if (!userMsg) return;

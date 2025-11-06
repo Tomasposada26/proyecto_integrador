@@ -5,11 +5,47 @@ def recomendaciones_personalizadas(request):
     anio = request.GET.get('anio', '').strip()
     libros = Book.objects.all()
     generos_list = []
+    # Diccionario de equivalencias español-inglés
+    equivalencias_generos = {
+        'ficcion': 'fiction',
+        'novela': 'novel',
+        'aventura': 'adventure',
+        'fantasia': 'fantasy',
+        'fantasía': 'fantasy',
+        'romance': 'romance',
+        'misterio': 'mystery',
+        'ciencia ficcion': 'science fiction',
+        'ciencia ficción': 'science fiction',
+        'biografia': 'biography',
+        'biografía': 'biography',
+        'historia': 'history',
+        'poesia': 'poetry',
+        'poesía': 'poetry',
+        'juvenil': 'juvenile',
+        'infantil': 'children',
+        'terror': 'horror',
+        'autoayuda': 'self-help',
+        'clasico': 'classic',
+        'clásico': 'classic',
+        'drama': 'drama',
+        'humor': 'humor',
+        'ensayo': 'essay',
+        'cuento': 'short story',
+        'policiaco': 'detective',
+        'policíaco': 'detective',
+        'suspenso': 'thriller',
+        'thriller': 'thriller',
+        'juvenile fiction': 'juvenile fiction',
+        'juvenile': 'juvenile',
+        # Agrega más equivalencias según tu dataset
+    }
     if generos:
         generos_list = [g.strip() for g in generos.split(',') if g.strip()]
         q = Q()
         for g in generos_list:
-            q |= Q(genre__icontains=g)
+            g_lower = g.lower()
+            g_ingles = equivalencias_generos.get(g_lower, g_lower)
+            q |= Q(genre__icontains=g_ingles) | Q(genre__icontains=g_lower)
         libros = libros.filter(q)
     if autor:
         libros = libros.filter(authors__icontains=autor)
@@ -53,6 +89,40 @@ def buscar_libros(request):
     resultados = []
     terminos = []
     page_obj = None
+    # Diccionario de equivalencias español-inglés
+    equivalencias_generos = {
+        'ficcion': 'fiction',
+        'novela': 'novel',
+        'aventura': 'adventure',
+        'fantasia': 'fantasy',
+        'fantasía': 'fantasy',
+        'romance': 'romance',
+        'misterio': 'mystery',
+        'ciencia ficcion': 'science fiction',
+        'ciencia ficción': 'science fiction',
+        'biografia': 'biography',
+        'biografía': 'biography',
+        'historia': 'history',
+        'poesia': 'poetry',
+        'poesía': 'poetry',
+        'juvenil': 'juvenile',
+        'infantil': 'children',
+        'terror': 'horror',
+        'autoayuda': 'self-help',
+        'clasico': 'classic',
+        'clásico': 'classic',
+        'drama': 'drama',
+        'humor': 'humor',
+        'ensayo': 'essay',
+        'cuento': 'short story',
+        'policiaco': 'detective',
+        'policíaco': 'detective',
+        'suspenso': 'thriller',
+        'thriller': 'thriller',
+        'juvenile fiction': 'juvenile fiction',
+        'juvenile': 'juvenile',
+        # Agrega más equivalencias según tu dataset
+    }
     if query:
         # Separar por comas, quitar duplicados, ignorar mayúsculas/minúsculas
         partes = [t.strip().lower() for t in query.split(',') if t.strip()]
@@ -63,7 +133,8 @@ def buscar_libros(request):
             if ' ' in termino:
                 q_obj |= Q(authors__icontains=termino)
             else:
-                q_obj |= Q(authors__icontains=termino) | Q(genre__icontains=termino)
+                termino_ingles = equivalencias_generos.get(termino, termino)
+                q_obj |= Q(authors__icontains=termino) | Q(genre__icontains=termino) | Q(genre__icontains=termino_ingles)
         resultados = Book.objects.filter(q_obj).distinct()
         paginator = Paginator(resultados, 12)  # 12 libros por página
         page = request.GET.get('page')

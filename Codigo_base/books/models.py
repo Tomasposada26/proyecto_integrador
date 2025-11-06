@@ -23,6 +23,7 @@ class Book(models.Model):
     dominant_age_group = models.CharField(max_length=50, blank=True, null=True, db_column='Dominant-Age-Group')
     genre = models.CharField(max_length=100, blank=True, default="Sin género")
     description = models.TextField(blank=True, null=True)
+    num_pages = models.PositiveIntegerField(null=True, blank=True, verbose_name="Número de páginas")
     embeddings = models.JSONField(null=True, blank=True)
     precio_cop = models.DecimalField("Precio (COP)", max_digits=10, decimal_places=2, null=True, blank=True)
 
