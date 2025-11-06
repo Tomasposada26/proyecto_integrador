@@ -48,23 +48,32 @@
         <button type="submit" class="btn btn-primary" style="border-radius:18px;">Enviar</button>
     </form>
     <a href="/" class="btn btn-outline mt-4">⬅️ Volver al inicio</a>
+    <script type="application/json" id="numPagesData">{{ libro.num_pages|default:'null' }}</script>
     <script>
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     const chatMessages = document.getElementById('chat-messages');
     // Simulación de respuesta del bot
+    // Variables para datos dinámicos del libro
+    const libroNumPagesValue = JSON.parse(document.getElementById('numPagesData').textContent);
+    const libroDescription = `{{ libro.description|default:'No hay sinopsis disponible para esta obra.' }}`;
+    const libroCalificacion = `{{ libro.average_rating|default:'sin calificación' }}`;
+    const libroGrupo = `{{ libro.dominant_age_group|default:'público general' }}`;
+
     function fakeBotReply(userMsg) {
         const msg = userMsg.toLowerCase();
         if (/de que trata|de qué trata|sobre que trata|sobre qué trata|de que va|de qué va|sinopsis|resumen/.test(msg)) {
-            return `{{ libro.description|default:'No hay sinopsis disponible para esta obra.' }}`;
+            return libroDescription;
         }
         if (/cuantas paginas|cuántas páginas|numero de paginas|número de páginas|paginas tiene|páginas tiene|cuantos paginas|cuántos páginas/.test(msg)) {
-            return `Este libro tiene {{ libro.num_pages|default:'un número de páginas no especificado' }} páginas.`;
+            if (libroNumPagesValue && libroNumPagesValue !== null) {
+                return `Este libro tiene ${libroNumPagesValue} páginas.`;
+            } else {
+                return 'Este libro tiene un número de páginas no especificado.';
+            }
         }
         if (/recomiendas.*regalo.*niñ|regalar.*niñ|para un niñ|para una niñ|niño|niña/.test(msg) && /regalo|comprar|recomiendas/.test(msg)) {
-            let calificacion = `{{ libro.average_rating|default:'sin calificación' }}`;
-            let grupo = `{{ libro.dominant_age_group|default:'público general' }}`;
-            return `Es un libro con una calificación de: ${calificacion} y está destinado para: ${grupo}, por lo que sí te lo recomiendo.`;
+            return `Es un libro con una calificación de: ${libroCalificacion} y está destinado para: ${libroGrupo}, por lo que sí te lo recomiendo.`;
         }
         return 'Esta es una respuesta automática sobre la obra.';
     }
