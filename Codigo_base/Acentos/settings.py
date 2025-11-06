@@ -114,3 +114,6 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+
+# Redirección después de login
+LOGIN_REDIRECT_URL = '/'
